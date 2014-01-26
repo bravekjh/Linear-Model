@@ -12,7 +12,7 @@
 ## libraries and functions
 ##
 
-mcmc.lm <- function(Y, X, mu.0, sigma.squared.beta.0, alpha.beta, beta.beta, alpha.epsilon, beta.epsilon){
+mcmc.lm <- function(Y, X, n.mcmc, mu.0, sigma.squared.beta.0, alpha.beta, beta.beta, alpha.epsilon, beta.epsilon){
 
 ##
 ## Initialize variables
@@ -58,7 +58,7 @@ for(k in 1:n.mcmc){
   ## sample beta
   ##
   
-  A.chol <- chol(t(X) %*% Sigma.epsilon.inv  %*% X + Sigma.beta.inv)
+  A.chol <- chol(t(X) %*% Sigma.epsilon.inv %*% X + Sigma.beta.inv)
   b <- (t(X) %*% Sigma.epsilon.inv %*% Y + Sigma.beta.inv %*% mu.beta)
   beta <- rMVN(A.chol, b)
   
@@ -67,7 +67,7 @@ for(k in 1:n.mcmc){
   ##
   
   A.chol <- chol(Sigma.beta.inv + Sigma.0.inv)
-  b <- Sigma.beta.inv %*% beta + Sigma.0.inv %*% mu.0  
+  b <- (Sigma.beta.inv %*% beta + Sigma.0.inv %*% mu.0)
   mu.beta <- rMVN(A.chol, b)
 
   ##
@@ -82,7 +82,7 @@ for(k in 1:n.mcmc){
   ## sample sigma.squared.epsilon
   ##
   
-  sigma.squared.epsilon <- 1 / rgamma(1, alpha.epsilon + n / 2, beta.beta + 1 / 2 * t(Y - X %*% beta) %*% (Y - X %*% beta))
+  sigma.squared.epsilon <- 1 / rgamma(1, alpha.epsilon + n / 2, beta.epsilon + 1 / 2 * t(Y - X %*% beta) %*% (Y - X %*% beta))
   Sigma.epsilon <- sigma.squared.epsilon * I.epsilon
   Sigma.epsilon.inv <- 1 / sigma.squared.epsilon* I.epsilon
   
