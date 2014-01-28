@@ -20,6 +20,7 @@ mcmc.lm <- function(Y, X, n.mcmc, mu.0, sigma.squared.beta.0, alpha.beta, beta.b
 
 n <- length(Y)
 tau <- dim(X)[2]
+n.burn <- floor(n.mcmc / 5) + 1
 #
 I.beta <- diag(tau)
 sigma.squared.beta <- 1 / rgamma(1, alpha.beta, beta.beta)
@@ -44,6 +45,8 @@ beta <- rMVN(A.chol = chol(Sigma.beta), b = Sigma.beta %*% mu.beta)
 beta.save <- matrix(nrow = tau, ncol = n.mcmc)
 sigma.squared.beta.save <- vector(length = n.mcmc)
 sigma.squared.epsilon.save <- vector(length = n.mcmc)
+Dbar.save <- vector(length = n.mcmc)
+Y.pred.mn <- vector(length = n)
 
 ##
 ## Start MCMC
@@ -87,6 +90,20 @@ for(k in 1:n.mcmc){
   Sigma.epsilon.inv <- 1 / sigma.squared.epsilon* I.epsilon
   
   ##
+  ## DIC
+  ##
+  
+  Dbar.save[k] <- -2 * sum(dnorm(Y, X %*% beta, sqrt(sigma.squared.epsilon), log = TRUE))
+  ##
+  ## Posterior Predictive Calculations 
+  ##
+  
+  if(k > n.burn){
+    Y.pred <- rMVN(chol(Sigma.epsilon.inv), Sigma.epsilon.inv %*% X %*% beta)
+    Y.pred.mn <- Y.pred.mn + Y.pred / (n.mcmc - n.burn)
+  }
+  
+  ##
   ## save variables
   ##
   
@@ -94,10 +111,31 @@ for(k in 1:n.mcmc){
   sigma.squared.epsilon.save[k] <- sigma.squared.epsilon
   sigma.squared.beta.save[k] <- sigma.squared.beta
   }
+###
+###  Calculate DIC and Print to Screen
+###
+
+if(dim(X)[2] == 1){
+  postbetamn <- mean(beta.save[, - (1:n.burn)])
+}
+if(dim(X)[2] > 1){
+  postbetamn <- apply(beta.save[, -(1:n.burn)], 1, mean)
+}
+posts2mn <- mean(sigma.squared.epsilon.save[ - (1:n.burn)])
+cat("\n", "Posterior Mean for Beta:", "\n")
+print(postbetamn)
+cat("Posterior Mean for s2:", "\n")
+print(posts2mn)
+Dhat <- -2 * (sum(dnorm(Y, X %*% postbetamn, sqrt(posts2mn), log=TRUE)))
+Dbar <- mean(Dbar.save[ - (1:n.burn)])
+pD <- Dbar - Dhat
+DIC <- Dhat + 2 * pD
+
+cat("Dhat:", Dhat, "Dbar:", Dbar, "pD:", pD, "DIC:", DIC, "\n")
 
 ##
 ## output
 ##
 
-list(beta.save = beta.save, sigma.squared.beta.save = sigma.squared.beta.save, sigma.squared.epsilon.save = sigma.squared.epsilon.save)
+list(beta.save = beta.save, sigma.squared.beta.save = sigma.squared.beta.save, sigma.squared.epsilon.save = sigma.squared.epsilon.save, Y.pred.mn = Y.pred.mn)
 }

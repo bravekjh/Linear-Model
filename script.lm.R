@@ -67,7 +67,7 @@ curve(dinvgamma(x, alpha.beta, beta.beta), from = 0, to = 10)
 alpha.epsilon <- 2
 beta.epsilon <- 10
 curve(dinvgamma(x, alpha.epsilon, beta.epsilon), from = 0, to = 10)
-n.mcmc <- 5000
+n.mcmc <- 500
 
 ##
 ## Fit mcmc
@@ -80,3 +80,6 @@ out <- mcmc.lm(Y, X, n.mcmc, mu.0, sigma.squared.beta.0, alpha.beta, beta.beta, 
 
 make.model.plot(out)
 
+# residual plot
+plot((out$Y.pred.mn - Y) , ylab = 'resid', main = 'residual plot')
+abline(h = 0)
