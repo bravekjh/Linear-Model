@@ -12,7 +12,7 @@
 ## libraries and functions
 ##
 
-mcmc.lm <- function(Y, X, n.mcmc, mu.0, sigma.squared.beta.0, alpha.beta, beta.beta, alpha.epsilon, beta.epsilon){
+mcmc.lm.lasso <- function(Y, X, n.mcmc, alpha.epsilon, beta.epsilon, alpha.lambda, beta.lambda){
 
 ##
 ## Initialize variables
@@ -20,31 +20,26 @@ mcmc.lm <- function(Y, X, n.mcmc, mu.0, sigma.squared.beta.0, alpha.beta, beta.b
 
 n <- length(Y)
 tau <- dim(X)[2]
-#
-I.beta <- diag(tau)
-sigma.squared.beta <- 1 / rgamma(1, alpha.beta, beta.beta)
-Sigma.beta <- sigma.squared.beta * I.beta
-Sigma.beta.inv <- 1 / sigma.squared.beta * I.beta 
-#
-I.epsilon <- diag(n)
+# sigma.squared.epsilon
 sigma.squared.epsilon <- 1 / rgamma(1, alpha.epsilon, beta.epsilon) 
-Sigma.epsilon <- sigma.squared.epsilon * I.epsilon
-Sigma.epsilon.inv <- 1 / sigma.squared.epsilon * I.epsilon
-#
-Sigma.0 <- sigma.squared.0 * I.beta
-Sigma.0.inv <- 1 / sigma.squared.0 * I.beta
-
-mu.beta <- rMVN(A.chol = chol(Sigma.0), b = Sigma.0 %*% mu.0)
-beta <- rMVN(A.chol = chol(Sigma.beta), b = Sigma.beta %*% mu.beta) 
+# lambda
+lambda.squared <- rgamma(1, alpha.lambda, beta.lambda)
+# gamma
+gamma.squared <- rgamma(tau, 1, lambda.squared / 2)
+Dgamma <- diag(gamma.squared)
+# beta
+mu.beta <- rep(0, tau)
+beta <- rMVN(chol(sigma.squared.epsilon * Dgamma), mu.beta)
 
 ##
 ## save variables
 ##
 
 beta.save <- matrix(nrow = tau, ncol = n.mcmc)
-sigma.squared.beta.save <- vector(length = n.mcmc)
 sigma.squared.epsilon.save <- vector(length = n.mcmc)
-Dbar <- vector(length = n.mcmc)
+gamma.squared.save <-  matrix(nrow = tau, ncol = n.mcmc)
+lambda.squared.save <- vector(length = n.mcmc)
+Dbar.save <- vector(length = n.mcmc)
 
 ##
 ## Start MCMC
@@ -59,41 +54,29 @@ for(k in 1:n.mcmc){
   ## sample beta
   ##
   
-  A.chol <- chol(t(X) %*% X + D.gamma)
+  A.chol <- chol(t(X) %*% X + Dgamma)
   b <- (t(X) %*% Y)
   beta <- rMVN(A.chol, b)
-  
-#   ##
-#   ## sample mu.beta
-#   ##
-#   
-#   A.chol <- chol(Sigma.beta.inv + Sigma.0.inv)
-#   b <- (Sigma.beta.inv %*% beta + Sigma.0.inv %*% mu.0)
-#   mu.beta <- rMVN(A.chol, b)
-
-#   ##
-#   ## sample sigma.squared.beta
-#   ##
-#   
-#   sigma.squared.beta <- 1 / rgamma(1, alpha.beta + tau / 2, beta.beta + 1 / 2 * t(beta - mu.beta) %*% (beta - mu.beta))
-#   Sigma.beta <- sigma.squared.beta * I.beta
-#   Sigma.beta.inv <- 1 / sigma.squared.beta * I.beta
   
   ##
   ## sample sigma.squared.epsilon
   ##
   
   sigma.squared.epsilon <- 1 / rgamma(1, alpha.epsilon + n / 2, beta.epsilon + 1 / 2 * t(Y - X %*% beta) %*% (Y - X %*% beta))
-#   Sigma.epsilon <- sigma.squared.epsilon * I.epsilon
-#   Sigma.epsilon.inv <- 1 / sigma.squared.epsilon* I.epsilon
-  
+      
   ##
-  ## sample gamma
+  ## sample gamma.squared
   ##
   
-  mu.tilde <- sqrt(lambda.squared * sigma.squared.epsilon / beta)
+  mu.tilde <- sqrt(lambda.squared * sigma.squared.epsilon / beta^2)
+  lambda.tilde <- lambda.squared
+  gamma.squared <- rinvgauss(tau, mu.tilde, lambda.tilde)
   
+  ##
+  ## lambda.squared
+  ##
   
+  lambda.squared <- rgamma(1, alpha.lambda + tau, beta.lambda + sum(gamma.squared) / 2)
   
   ##
   ## DIC calculations
@@ -107,12 +90,13 @@ for(k in 1:n.mcmc){
   
   beta.save[, k] <- beta
   sigma.squared.epsilon.save[k] <- sigma.squared.epsilon
-  sigma.squared.beta.save[k] <- sigma.squared.beta
+  gamma.squared.save[, k] <- gamma.squared
+  lambda.squared.save[k] <- lambda.squared
   }
 
 ##
 ## output
 ##
 
-list(beta.save = beta.save, sigma.squared.beta.save = sigma.squared.beta.save, sigma.squared.epsilon.save = sigma.squared.epsilon.save)
+list(beta.save = beta.save, sigma.squared.epsilon.save = sigma.squared.epsilon.save, gamma.squared.save = gamma.squared.save, lambda.squared.save = lambda.squared.save)
 }

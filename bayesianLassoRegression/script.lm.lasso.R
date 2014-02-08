@@ -2,6 +2,8 @@
 ## libraries and functions
 ##
 
+library(statmod)
+setwd('~/Linear-Model/')
 source('dinvgamma.R')
 source('mcmc.lm.R')
 source('rMVN.R')
@@ -15,11 +17,12 @@ make.model.plot <- function(out){
   matplot(t(out$beta.save[, n.burn:n.mcmc]), type = 'l')
   #hist(out$beta.save[1,][n.burn:n.mcmc])
   #abline(v = beta[1], col = 'red')
-  hist(out$beta.save[2,][n.burn:n.mcmc])
+  hist(out$beta.save[2,][n.burn:n.mcmc], main = 'Posterior of Beta2')
   abline(v = beta[2], col = 'red')
-  plot(out$sigma.squared.beta.save[n.burn:n.mcmc], type = 'l')
   plot(out$sigma.squared.epsilon.save[n.burn:n.mcmc], type = 'l')
   abline(h = sigma.squared.epsilon, col = 'red')
+  plot(out$lambda.squared.save, type = 'l')
+#  matplot(t(out$gamma.squared.save[, n.burn:n.mcmc]),  type = 'l')
 }
 
 
@@ -61,16 +64,22 @@ lm(Y ~ . ,data = data)
 ##
 
 # hyperparameters for mu.beta and sigma.squared.beta
-mu.0 <- rep(0, tau)
-sigma.squared.0 <- 100 
-# hyerparamters for sigma.squared.beta
-alpha.beta <- 2
-beta.beta <- 10
-curve(dinvgamma(x, alpha.beta, beta.beta), from = 0, to = 10)
-# hyperparameters for sigma.squared.epsilon
-alpha.epsilon <- 2
+alpha.epsilon <- 10
 beta.epsilon <- 10
-curve(dinvgamma(x, alpha.epsilon, beta.epsilon), from = 0, to = 10)
+alpha.lambda <- 10
+beta.lambda <- 10
+# 
+# mu.0 <- rep(0, tau)
+# sigma.squared.0 <- 100 
+# # hyerparamters for sigma.squared.beta
+# alpha.beta <- 2
+# beta.beta <- 10
+# curve(dinvgamma(x, alpha.beta, beta.beta), from = 0, to = 10)
+# # hyperparameters for sigma.squared.epsilon
+# alpha.epsilon <- 2
+# beta.epsilon <- 10
+# curve(dinvgamma(x, alpha.epsilon, beta.epsilon), from = 0, to = 10)
+
 n.mcmc <- 5000
 
 ##
@@ -80,7 +89,8 @@ n.mcmc <- 5000
 Y <- data.samp[, 1]
 X <- as.matrix(data.samp[, 2:(tau + 1)], ncol = tau)
 
-out <- mcmc.lm(Y, X, n.mcmc, mu.0, sigma.squared.beta.0, alpha.beta, beta.beta, alpha.epsilon, beta.epsilon)
+out <- mcmc.lm.lasso(Y, X, n.mcmc, alpha.epsilon, beta.epsilon, alpha.lambda, beta.lambda)
+              
 
 make.model.plot(out)
 
