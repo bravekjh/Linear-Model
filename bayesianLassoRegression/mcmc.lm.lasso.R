@@ -62,7 +62,7 @@ for(k in 1:n.mcmc){
   ## sample sigma.squared.epsilon
   ##
   
-  sigma.squared.epsilon <- 1 / rgamma(1, alpha.epsilon + n / 2, beta.epsilon + 1 / 2 * t(Y - X %*% beta) %*% (Y - X %*% beta))
+  sigma.squared.epsilon <- 1 / rgamma(1, alpha.epsilon + n / 2 + tau / 2, beta.epsilon + 1 / 2 * t(Y - X %*% beta) %*% (Y - X %*% beta) + 1 / 2 * t(beta) %*% Dgamma %*% beta)
       
   ##
   ## sample gamma.squared
@@ -71,6 +71,7 @@ for(k in 1:n.mcmc){
   mu.tilde <- sqrt(lambda.squared * sigma.squared.epsilon / beta^2)
   lambda.tilde <- lambda.squared
   gamma.squared <- rinvgauss(tau, mu.tilde, lambda.tilde)
+  Dgamma <- diag(gamma.squared[,1])
   
   ##
   ## lambda.squared

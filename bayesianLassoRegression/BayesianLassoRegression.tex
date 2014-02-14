@@ -111,14 +111,14 @@ which is Normal with mean $ \bm{A}^{ - 1} \bm{b}$ and variance $\bm{A}^{ - 1}$ w
 \subsection{Full Conditional for $\sigma^2_\epsilon$}
 %
 \begin{align*}
-[\sigma^2_\epsilon | \cdot] & \propto [\bm{y} | \bm{\beta}, \sigma^2_\epsilon] [\sigma^2_\epsilon]\\
+[\sigma^2_\epsilon | \cdot] & \propto [\bm{y} | \bm{\beta}, \sigma^2_\epsilon] [\beta | \sigma^2_\epsilon, \bm{\gamma}^2] [\sigma^2_\epsilon]\\
 %
-& \propto (|\bm{\Sigma}_\epsilon |^{ - \frac{1} {2}}) e^{ - \frac{1} {2} (\bm{y} - \bm{X} \bm{\beta})^T \bm{\Sigma}^{ - 1} (\bm{y} - \bm{X} \bm{\beta})} (\sigma^2_\epsilon)^{ - \alpha_\epsilon + 1} e^{ - \frac{\beta_\epsilon} {\sigma^2_\epsilon}}\\
+ & \propto (|\bm{\Sigma}_\epsilon |^{ - \frac{1} {2}}) e^{ - \frac{1} {2} (\bm{y} - \bm{X} \bm{\beta})^T \bm{\Sigma}^{ - 1} (\bm{y} - \bm{X} \bm{\beta})} (|\bm{\Sigma}_\beta |^{ - \frac{1} {2}}) e^{ - \frac{1} {2} \bm{\beta}^T \bm{\Sigma}_{\beta}^{ - 1} \bm{\beta}}(\sigma^2_\epsilon)^{ - \alpha_\epsilon + 1} e^{ - \frac{\beta_\epsilon} {\sigma^2_\epsilon}}\\
 %
-& \propto (\sigma^2_\epsilon)^{ -\frac{n} {2} - \alpha_\epsilon - 1} e^{ - \frac{1} {\sigma^2_\epsilon} ( \frac{1} {2} (\bm{y} - \bm{X} \bm{\beta})^T (\bm{y} - \bm{X} \bm{\beta}) + \beta_\epsilon)}
+& \propto (\sigma^2_\epsilon)^{ -\frac{n} {2} - \frac{p} {2} - \alpha_\epsilon - 1} e^{ - \frac{1} {\sigma^2_\epsilon} ( \frac{1} {2} (\bm{y} - \bm{X} \bm{\beta})^T (\bm{y} - \bm{X} \bm{\beta}) + \frac{1} {2} \bm{\beta}^T \bm{D}_\gamma^{ - 1} \bm{\beta} + \beta_\epsilon)}
 \end{align*}
 % 
- IG$(\alpha_\beta + \frac{n} {2}, \frac{1} {2} (\bm{y} - \bm{X} \bm{\beta})^T (\bm{y} - \bm{X} \bm{\beta}) + \beta_\beta)$ since the determinant $|\bm{\Sigma}_\epsilon| = (\sigma^2_\epsilon)^{n}$ and $\bm{\Sigma}_\epsilon^{ - 1} = \frac{1} {\sigma^2_\epsilon} \bm{I}$
+ IG$(\alpha_\beta + \frac{n} {2} + \frac{p} {n}, \frac{1} {2} (\bm{y} - \bm{X} \bm{\beta})^T (\bm{y} - \bm{X} \bm{\beta}) + \frac{1} {2} \bm{\beta}^t \bm{D}_\gamma \bm{\beta} + \beta_\beta)$ since $|\bm{\Sigma}_\epsilon| = (\sigma^2_\epsilon)^{n}$, $\bm{\Sigma}_\epsilon^{ - 1} = \frac{1} {\sigma^2_\epsilon} \bm{I}$, $|\bm{\Sigma}_\beta| = (\sigma^2_\epsilon)^{p} |\bm{D}_\gamma|$, and $\bm{\Sigma}_\beta^{ - 1} = \frac{1} {\sigma^2_\epsilon} \bm{D}_\gamma$
 %
 \subsection{Full Condtional for $\frac{1} {\gamma_j}$}
 %

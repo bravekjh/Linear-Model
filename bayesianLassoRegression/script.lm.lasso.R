@@ -1,3 +1,4 @@
+rm(list = ls())
 ##
 ## libraries and functions
 ##
@@ -5,15 +6,14 @@
 library(statmod)
 setwd('~/Linear-Model/')
 source('dinvgamma.R')
-source('mcmc.lm.R')
 source('rMVN.R')
 
-setwd("~/Linear-Model/Simple Linear Regression/")
-source("mcmc.lm.R")
+setwd("~/Linear-Model/bayesianLassoRegression/")
+source("mcmc.lm.lasso.R")
 
 make.model.plot <- function(out){
   n.burn <- floor(n.mcmc / 5) + 1
-  layout(matrix(1:4, 2))
+  layout(matrix(1:9, 3))
   matplot(t(out$beta.save[, n.burn:n.mcmc]), type = 'l')
   #hist(out$beta.save[1,][n.burn:n.mcmc])
   #abline(v = beta[1], col = 'red')
