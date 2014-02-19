@@ -44,7 +44,7 @@ beta <- rMVN(A.chol = chol(Sigma.beta), b = Sigma.beta %*% mu.beta)
 beta.save <- matrix(nrow = tau, ncol = n.mcmc)
 sigma.squared.beta.save <- vector(length = n.mcmc)
 sigma.squared.epsilon.save <- vector(length = n.mcmc)
-Dbar <- vector(length = n.mcmc)
+Dbar.save <- vector(length = n.mcmc)
 
 ##
 ## Start MCMC
