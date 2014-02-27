@@ -39,12 +39,12 @@ make.lm.data <- function(N, n, beta, sigma.sqaured.epsilon){
   for(i in 1:tau){
     X[, i] <- rnorm(N, 0, 1)
   }
-#   X <-matrix(c(rep(1, N), rep(seq(0, 1, length = N), tau - 1)), nrow = N, ncol = tau)
-#   if(is.null(dim(X))){
-#     Y <- X * beta + rnorm(N, 0, sigma.squared.epsilon)
-#   } else {
-    Y <- X %*% beta + rnorm(N, 0, sigma.squared.epsilon)
-#   }
+  #   X <-matrix(c(rep(1, N), rep(seq(0, 1, length = N), tau - 1)), nrow = N, ncol = tau)
+  #   if(is.null(dim(X))){
+  #     Y <- X * beta + rnorm(N, 0, sigma.squared.epsilon)
+  #   } else {
+  Y <- X %*% beta + rnorm(N, 0, sigma.squared.epsilon)
+  #   }
   #list(X = X, Y = Y, N = N, n = n, sigma.squared.epsilon = sigma.squared.epsilon)
   data.frame(Y, X)
 }
