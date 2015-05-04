@@ -54,8 +54,8 @@ for(k in 1:n.mcmc){
   ## sample beta
   ##
   
-  A.chol <- chol(t(X) %*% X + Dgamma)
-  b <- (t(X) %*% Y)
+  A.chol <- chol(t(X) %*% X + Dgamma) ## check if I need variance term here
+  b <- (t(X) %*% Y) ## check if I need variance term here
   beta <- rMVN(A.chol, b)
   
   ##
@@ -71,7 +71,7 @@ for(k in 1:n.mcmc){
   mu.tilde <- sqrt(lambda.squared * sigma.squared.epsilon / beta^2)
   lambda.tilde <- lambda.squared
   gamma.squared <- rinvgauss(tau, mu.tilde, lambda.tilde)
-  Dgamma <- diag(gamma.squared[,1])
+  Dgamma <- diag(as.vector(gamma.squared))
   
   ##
   ## lambda.squared

@@ -8,7 +8,7 @@ setwd('~/Linear-Model/')
 source('dinvgamma.R')
 source('rMVN.R')
 
-setwd("~/Linear-Model/bayesianLassoRegression/")
+setwd("~/Linear-Model/bayesianLassoRegression/fixedEffectModel/")
 source("mcmc.lm.lasso.R")
 
 make.model.plot <- function(out){
@@ -93,4 +93,6 @@ out <- mcmc.lm.lasso(Y, X, n.mcmc, alpha.epsilon, beta.epsilon, alpha.lambda, be
               
 
 make.model.plot(out)
+beta
+rowMeans(out$beta)
 
