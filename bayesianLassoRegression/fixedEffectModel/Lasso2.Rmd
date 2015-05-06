@@ -1,0 +1,258 @@
+---
+title: "Lasso"
+author: "John Tipton"
+date: "May 4, 2015"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+library(knitr)
+##
+## Draft quality, comment out for best graphics
+##
+opts_chunk$set(dev='jpeg', quality=20)
+
+##
+## libraries and functions
+##
+
+library(statmod)
+source('~/Linear-Model/dinvgamma.R')
+source('~/Linear-Model/rMVN.R')
+
+source("~/Linear-Model/bayesianLassoRegression/fixedEffectModel/mcmc.lm.lasso.R")
+
+make_model_plot <- function(out){
+  layout(matrix(1:9, 3))
+  matplot(out$mu, type = 'l')
+  matplot(t(out$beta), type = 'l')
+  hist(out$beta[2,], main = 'Posterior of Beta2')
+  abline(v = beta[2], col = 'red')
+  plot(out$s2_epsilon, type = 'l')
+  abline(h = s2_epsilon, col = 'red')
+  plot(out$lambda2, type = 'l')
+  hist(out$s2_epsilon, main = "Posterior of s2_epsilon")
+  abline(v = s2_epsilon, col = 'red')
+}
+```
+
+
+# Put model statement here
+
+then we define the model parameters
+
+```{r}
+N <- 1000
+n <- 100
+beta <- -3:3
+s2_epsilon <- 0.25
+tau <- length(beta)
+```
+
+Given these model parameters, we simulate some data where there is no multicollinearity.
+
+```{r} 
+make.lm.data <- function(N, n, beta, sigma.sqaured_epsilon){
+  tau <- length(beta)
+  X <- matrix(rnorm(N * tau), nrow = N, ncol = tau)
+  Y <- X %*% beta + rnorm(N, 0, s2_epsilon)
+  data.frame(Y, X)
+}
+
+data <- make.lm.data(N, n, beta, s2_epsilon)
+```
+
+To examine this model further, we subsample from the truth and attempt to estimate model parameters.
+
+```{r}
+H <- sample(1:N, n)
+data.samp <- data[H, ]
+```
+
+For comparison, we examine a simple linear regression model.
+
+```{r}
+summary(mod <- lm(Y ~ ., data = data.samp))
+```
+
+Since we are using a Bayesian approach, we specify our prior parameters as 
+
+```{r}
+alpha_epsilon <- 1
+beta_epsilon <- 1
+alpha_lambda <- 10
+beta_lambda <- 1
+
+n_mcmc <- 10000
+
+Y <- data.samp[, 1]
+X <- as.matrix(data[, 2:(tau + 1)], ncol = tau)
+
+out <- mcmc(Y, X, H, n_mcmc, alpha_epsilon, beta_epsilon, alpha_lambda, beta_lambda)
+```
+
+## Examine model output
+```{r}
+make_model_plot(out)
+```
+
+## Examine estimates $\hat{\boldsymbol{\beta}}$
+```{r}
+library(pander)
+results=data.frame(rbind(c(0, beta), c(mean(out$mu), rowMeans(out$beta))), row.names=c("Truth", "Estimate"))
+names(results)=c("mu", "Beta1", "Beta2", "Beta3", "Beta4", "Beta5", "Beta6", "Beta7")
+pandoc.table(results, style="rmarkdown")
+
+```
+
+
+## Examine MSPE
+```{r}
+## linear model
+preds <- mod$coefficients[1] + out$X %*% mod$coefficients[2:8]
+mean((data$Y - preds)^2)
+## mcmc model
+preds_mcmc=rowMeans(out$mu + as.matrix(data[, -1]) %*% out$beta)
+mean((data$Y - preds_mcmc)^2)
+
+```
+
+# Next a model with multicollinearity
+
+```{r, echo=TRUE} 
+##
+## Simulate some data
+##
+
+library(myFunctions)
+make.lm.data <- function(N, n, beta, sigma.sqaured_epsilon){
+  tau <- length(beta)
+  D = as.matrix(dist(1:N))
+  X <- matrix(t(mvrnormArma(tau, rnorm(N), 0.75 * exp(- D * 0.5) + 0.25 * diag(N))), nrow = N, ncol = tau)
+  Y <- X %*% beta + rnorm(N, 0, s2_epsilon)
+  data.frame(Y, X)
+}
+
+data <- make.lm.data(N, n, beta, s2_epsilon)
+pairs(data)
+```
+
+## Subsample the data 
+
+```{r}
+H <- sample(1:N, n)
+data.samp <- data[H, ]
+```
+
+## Examine a linear regression model
+
+```{r}
+summary(mod2 <- lm(Y ~ ., data = data.samp))
+```
+
+## Specify priors for a Bayesian model
+
+```{r}
+##
+## Setup priors
+##
+# hyperparameters for mu.beta and s2.beta
+alpha_epsilon <- 1
+beta_epsilon <- 1
+alpha_lambda <- 10
+beta_lambda <- 1
+
+n_mcmc <- 10000
+
+##
+## Fit mcmc
+##
+
+Y <- data.samp[, 1]
+X <- as.matrix(data[, 2:(tau + 1)], ncol = tau)
+
+out <- mcmc(Y, X, H, n_mcmc, alpha_epsilon, beta_epsilon, alpha_lambda, beta_lambda)
+```
+
+## Examine model output
+```{r}
+make_model_plot(out)
+```
+
+## Examine estimates $\hat{\boldsymbol{\beta}}$
+```{r}
+library(pander)
+results=data.frame(rbind(c(0, beta), c(mean(out$mu), rowMeans(out$beta))), row.names=c("Truth", "Estimate"))
+names(results)=c("mu", "Beta1", "Beta2", "Beta3", "Beta4", "Beta5", "Beta6", "Beta7")
+pandoc.table(results, style="rmarkdown")
+```
+
+
+## Examine MSPE
+```{r}
+## linear model
+preds <- mod2$coefficients[1] +  as.matrix(data[, - 1]) %*% mod2$coefficients[2:8]
+mean((data$Y - preds)^2)
+## mcmc model
+preds_mcmc=rowMeans(out$mu + as.matrix(data[, -1]) %*% out$beta)
+mean((data$Y - preds_mcmc)^2)
+```
+
+# Now let's examine a principle components model
+## Examine a linear regression model
+
+```{r}
+summary(mod3 <- lm(Y ~ makePCA(as.matrix(data[, -1]))$X_pca[H, ], data = data.samp))
+```
+
+
+## Specify priors for a Bayesian model
+
+```{r}
+##
+## Setup priors
+##
+# hyperparameters for mu.beta and s2.beta
+alpha_epsilon <- 1
+beta_epsilon <- 1
+alpha_lambda <- 10
+beta_lambda <- 1
+
+n_mcmc <- 10000
+
+##
+## Fit mcmc
+##
+
+Y <- data.samp[, 1]
+X <- as.matrix(data[, 2:(tau + 1)], ncol = tau)
+
+out <- mcmc(Y, X, H, n_mcmc, alpha_epsilon, beta_epsilon, alpha_lambda, beta_lambda, pca = TRUE)
+```
+
+## Examine model output
+```{r}
+make_model_plot(out)
+```
+
+## Examine estimates $\hat{\boldsymbol{\beta}}$
+```{r}
+library(pander)
+results=data.frame(rbind(c(0, beta), c(mean(out$mu), rowMeans(out$beta))), row.names=c("Truth", "Estimate"))
+names(results)=c("mu", "Beta1", "Beta2", "Beta3", "Beta4", "Beta5", "Beta6", "Beta7")
+pandoc.table(results, style="rmarkdown")
+```
+
+
+## Examine MSPE
+```{r}
+## linear model
+preds <- mod3$coefficients[1] + out$X %*% mod3$coefficients[2:8]
+mean((data$Y - preds)^2)
+## mcmc model
+preds_mcmc=rowMeans(out$mu + out$X %*% out$beta)
+mean((data$Y - preds_mcmc)^2)
+
+```
+
