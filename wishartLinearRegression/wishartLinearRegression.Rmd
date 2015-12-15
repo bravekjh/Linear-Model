@@ -1,0 +1,81 @@
+---
+title: "Wishart Multivaraite Response Linear Regression"
+author: "John Tipton"
+date: "December 13, 2015"
+output: pdf_document
+---
+
+\section{Model}
+We begin with the model for the multivariate observation $i$ 
+\begin{align*}
+\mathbf{y}_i & \sim \mathrm{N}\left( X_i \boldsymbol{\beta}, \mathbf{Q}^{-1} \right) \\
+\boldsymbol{\beta} & \sim \mathrm{N}\left(\mathbf{0}, \sigma^2_\beta \mathbf{I}\right), \\
+\boldsymbol{Q} & \sim \mathrm{Wishart}\left(\nu, \nu \mathbf{S} \right),
+\end{align*}
+where $\boldsymbol{\beta}$ is the $p$-dimensional set of regression coefficients for covariate $X_i$. $\boldsymbol{\epsilon}_i$ is a correlated random error that accounts for the correlations between the $p$ response variables for observation $i$ that are not explained by
+ the covariate $X_i$ through the $p \times p$ covariance matrix $\mathbf{Q}^{-1}$.
+\section{Posterior}
+The posterior that we wish to sample is
+\begin{align*}
+\left[\boldsymbol{\beta}, \mathbf{Q} | \mathbf{y}\right] & \propto \left( \prod_{i=1}^N \left[\mathbf{y}_i | \boldsymbol{\beta}, \mathbf{Q}\right] \right) \left[\boldsymbol{\beta}\right] \left[\mathbf{Q}\right] \\
+& \propto \left( \prod_{i=1}^N |\mathbf{Q}^{-1}|^{-\frac{1}{2}} \exp{\left\{ -\frac{1}{2} \left( \mathbf{y}_i - X_i \boldsymbol{\beta} \right)' \mathbf{Q} \left( \mathbf{y}_i - X_i \boldsymbol{\beta} \right) \right\}} \right) \\
+& \hspace{6mm} \times \left( \left(\sigma^2_\beta \right)^{-\frac{p}{2}} \exp{\left\{ - \frac{1}{2 \sigma^2_\beta} \boldsymbol{\beta}' \boldsymbol{\beta} \right\}} \right) \\
+& \hspace{6mm} |\mathbf{Q}|^{\frac{\nu - p - 1}{2}} \exp{\left\{ -\frac{1}{2} \mathrm{tr}\left(\left(\nu \mathbf{S}\right)^{-1}\mathbf{Q}\right)\right\}}
+\end{align*}
+The log posterior density is
+\begin{align*}
+\log\left[\boldsymbol{\beta}_1, \ldots, \boldsymbol{\beta}_p, \mathbf{Q} | \mathbf{y}\right] & \propto \left( \sum_{i=1}^N \log\left[\mathbf{y}_i | \boldsymbol{\beta}_1, \ldots, \boldsymbol{\beta}_p, \mathbf{Q}\right] \right) + \left( \sum_{j=1}^p \log\left[\boldsymbol{\beta}_j\right] \right) + \log\left[\mathbf{Q}\right] \\
+& \propto \left( \sum_{i=1}^N -\frac{1}{2} \log|\mathbf{Q}^{-1}| -\frac{1}{2} \left( \mathbf{y}_i - \sum_{j=1}^p \mathbf{X}_i \boldsymbol{\beta}_j \right)' \mathbf{Q} \left( \mathbf{y}_i - \sum_{j=1}^p \mathbf{X}_i \boldsymbol{\beta}_j \right) \right) + \\
+& \hspace{6mm} \left( \sum_{j=1}^p -\frac{p}{2} \log\left(\sigma^2_\beta\right) - \frac{1}{2 \sigma^2_\beta} \boldsymbol{\beta}_j' \boldsymbol{\beta}_j \right) + \\
+& \hspace{6mm} \frac{\nu - p - 1}{2} \log|\mathbf{Q}| - \frac{1}{2} \mathrm{tr}\left(\left(\nu \mathbf{S}\right)^{-1} \mathbf{Q}\right)
+\end{align*}
+\section{Full Conditionals}
+\subsection{Full Conditional for $\boldsymbol{\beta}_j$}
+\begin{align*}
+\log\left[ \boldsymbol{\beta}_j | \cdot \right] & \propto \sum_{i=1}^N \log\left[\mathbf{y}_i | \boldsymbol{\beta}_1, \ldots, \boldsymbol{\beta}_p, \mathbf{Q}\right] + \log\left[\boldsymbol{\beta}_j\right] \\
+& \propto
+\end{align*}
+```{r setup, eval=FALSE}
+## libraries and functions
+source('~/Linear-Model/dinvgamma.R')
+source('~/Linear-Model/mcmc.lm.R')
+source('~/Linear-Model/rMVN.R')
+source("~/Linear-Model/wishartLinearRegression/mcmc.lm.R")
+library(mvtnorm)
+
+## Simulate some data
+
+N <- 1000                                     ## sample size
+p <- 4
+beta <- matrix(seq(-3, 3, length=p^2), p, p)
+s2 <- 0.25
+Q <- matrix(rWishart(1, 10, diag(p)), p, p)
+
+make.lm.data <- function(N, n, beta, s2, Q){
+  p <- dim(beta)[2]
+  X <- matrix(rnorm(N*p), nrow=N, ncol=p)
+  Y <- X %*% beta + rmvnorm(N, rep(0, p), s2 * Q)
+  list(Y=Y, X=X)
+}
+
+data <- make.lm.data(N, n, beta, s2, Q)
+
+## Setup MCMC
+
+# priors for beta
+mu_beta <- matrix(rep(0, p^2), p, p)
+s2_beta <- 100 
+# priors for s2
+s2_lower <- 0
+s2_upper <- 100
+# priors for Q
+nu <- p
+S <- diag(p)
+n_mcmc <- 5000
+
+params <- list(n_mcmc=n_mcmc, mu_beta=mu_beta, s2_beta=s2_beta, 
+               s2_lower=s2_lower, s2_upper=s2_upper, nu=nu, S=S)
+
+## Fit mcmc
+out <- mcmc.lm(Y, X, params)
+```
