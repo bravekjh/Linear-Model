@@ -66,7 +66,7 @@ which can be sampled using Metropolis-Hastings
 
 \section{Simulation and `R` code}
 ```{r, cache = TRUE, tidy=TRUE, message=FALSE}
-set.seed(11)
+set.seed(101)
 N <- 100
 d <- 3
 beta <- rnorm(d)
